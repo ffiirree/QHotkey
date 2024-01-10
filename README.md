@@ -1,8 +1,13 @@
 <h1 align="center">QHotkey</h1>
 
-A global shortcut/hotkey for Desktop Qt-Applications.
-
-The QHotkey is a class that can be used to create hotkeys/global shortcuts, aka shortcuts that work everywhere, independent of the application state. This means your application can be active, inactive, minimized or not visible at all and still receive the shortcuts.
+<p>
+    <p align="center">
+        A global shortcut/hotkey library for Desktop Qt-Applications.
+    </p>
+    <p align="center">
+        QHotkey can be used to create hotkeys/global shortcuts, aka shortcuts that work everywhere, independent of the application state. This means your application can be active, inactive, minimized or not visible at all and still receive the shortcuts.
+    </p>
+</p>
 
 ## Features
 
@@ -18,7 +23,12 @@ The QHotkey is a class that can be used to create hotkeys/global shortcuts, aka 
 
 ## Building
 
-QHotkey supports both Qt6 and Qt5. When using Qt6, version 6.2.0 or later required. It can be built by either the CMake or qmake building systems.
+### Requirements
+
+- `C++ 17`
+- `CMake 3.16`
+- `Qt > 5.12` or `Qt > 6.2`
+- At least the QtGui-Module (a QGuiApplication). Hotkeys on console based applications are not supported (By the operating systems).
 
 ### CMake
 
@@ -33,6 +43,7 @@ cmake --build build -j4 --config Relase # --target intall
 - `QT_DEFAULT_MAJOR_VERSION` : which major version of Qt is used (default `5`).
 - `QHOTKEY_EXAMPLES` : build the testing application.
 - `BUILD_SHARED_LIBS` : build static or shared libraries.
+- `CMAKE_INSTALL_PREFIX` : installation path.
 
 ## Usage
 
@@ -92,18 +103,9 @@ For you this means: QHotkey instances on other threads than the main thread may 
 
 ## Documentation
 
-The documentation is available as release and on [github pages](https://skycoder42.github.io/QHotkey/).
-
 The documentation was created using [doxygen](http://www.doxygen.org). It includes an HTML-documentation and Qt-Help files that can be included into QtCreator (QtAssistant) to show F1-Help (See [Adding External Documentation](https://doc.qt.io/qtcreator/creator-help.html#adding-external-documentation) for more details).
 
 ## Technical
-
-### Requirements
-
-- `C++ 17`
-- `CMake 3.16`
-- Explicit support is only given down to the latest Qt LTS, but may work with earlier versions, too
-- At least the QtGui-Module (a QGuiApplication). Hotkeys on console based applications are not supported (By the operating systems). You can however create a gui application without any visible window.
 
 ### Known Limitations
 
