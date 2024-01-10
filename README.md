@@ -22,25 +22,17 @@ QHotkey supports both Qt6 and Qt5. When using Qt6, version 6.2.0 or later requir
 
 ### CMake
 
-The CMake `QT_DEFAULT_MAJOR_VERSION` variable controls which major version of Qt is used for building, and defaults to `5`. For example, use the CMake command line option `-DQT_DEFAULT_MAJOR_VERSION=6` for building with Qt6. To build the testing application `QHotkeyTest`, specify `-DQHOTKEY_EXAMPLES=ON`. CMake example usage:
-
 ```bash
-$ cd QHotkey
-$ cmake -B build -S . -DQT_DEFAULT_MAJOR_VERSION=6
-$ cmake --build build
-# cmake --install build
+cd QHotkey
+cmake -B build -S . -DBUILD_SHARED_LIBS=ON
+cmake --build build -j4 --config Relase # --target intall
 ```
 
-### qmake
+#### Options
 
-The major version of Qt is chosen by the qmake invocation itself, as the qmake executable is tied to a specific Qt version. The executable name can vary between operating systems. qmake example usage:
-
-```bash
-$ cd QHotkey
-$ qmake
-$ make
-# make install
-```
+- `QT_DEFAULT_MAJOR_VERSION` : which major version of Qt is used (default `5`).
+- `QHOTKEY_EXAMPLES` : build the testing application.
+- `BUILD_SHARED_LIBS` : build static or shared libraries.
 
 ## Usage
 
@@ -70,8 +62,6 @@ int main(int argc, char *argv[])
     return app.exec();
 }
 ```
-
-**Note:** You need the .pri include for this to work.
 
 ### Testing
 
@@ -114,7 +104,6 @@ The documentation was created using [doxygen](http://www.doxygen.org). It includ
 - `CMake 3.16`
 - Explicit support is only given down to the latest Qt LTS, but may work with earlier versions, too
 - At least the QtGui-Module (a QGuiApplication). Hotkeys on console based applications are not supported (By the operating systems). You can however create a gui application without any visible window.
-
 
 ### Known Limitations
 
