@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.16)
 
 project(qhotkey
     VERSION 1.5.0
@@ -9,6 +9,9 @@ project(qhotkey
 option(QHOTKEY_EXAMPLES "Build examples" OFF)
 option(QHOTKEY_INSTALL "Enable install rule" ON)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_AUTOMOC ON)
 
@@ -62,8 +65,8 @@ else()
         find_package(Qt${QT_DEFAULT_MAJOR_VERSION} COMPONENTS X11Extras REQUIRED)
         target_link_libraries(qhotkey
             PRIVATE
-                ${X11_LIBRARIES}
-                Qt${QT_DEFAULT_MAJOR_VERSION}::X11Extras)
+            ${X11_LIBRARIES}
+            Qt${QT_DEFAULT_MAJOR_VERSION}::X11Extras)
     endif()
 
     include_directories(${X11_INCLUDE_DIR})
@@ -74,8 +77,8 @@ include(GNUInstallDirs)
 
 target_include_directories(qhotkey
     PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/QHotkey>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/QHotkey>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 include(CMakePackageConfigHelpers)
 
