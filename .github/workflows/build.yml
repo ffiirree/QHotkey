@@ -54,18 +54,3 @@ jobs:
         run: |
           cmake . -D BUILD_SHARED_LIBS=ON -D QHOTKEY_EXAMPLES=ON ${{ matrix.additional_arguments }}
           cmake --build .
-
-      - name: Setup MSVC environment for QMake
-        uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Build with QMake as static
-        working-directory: HotkeyTest
-        run: |
-          qmake
-          ${{ matrix.make }}
-
-      - name: Build with QMake as shared
-        working-directory: HotkeyTest
-        run: |
-          qmake "DEFINES+=QHOTKEY_SHARED QHOTKEY_LIBRARY"
-          ${{ matrix.make }}
