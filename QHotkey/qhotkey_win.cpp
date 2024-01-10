@@ -13,21 +13,21 @@
 #define MOD_NOREPEAT 0x4000
 #endif
 
-class QHotkeyPrivateWin : public QHotkeyPrivate
+class QHotkeyPrivateWin final : public QHotkeyPrivate
 {
 public:
     QHotkeyPrivateWin();
     // QAbstractNativeEventFilter interface
     bool nativeEventFilter(const QByteArray& eventType, void *message,
-                           _NATIVE_EVENT_RESULT *result) override;
+                           QNATIVE_EVENT_RESULT *result) override;
 
 protected:
     void    pollForHotkeyRelease();
     // QHotkeyPrivate interface
-    quint32 nativeKeycode(Qt::Key keycode, bool& ok) Q_DECL_OVERRIDE;
-    quint32 nativeModifiers(Qt::KeyboardModifiers modifiers, bool& ok) Q_DECL_OVERRIDE;
-    bool    registerShortcut(QHotkey::NativeShortcut shortcut) Q_DECL_OVERRIDE;
-    bool    unregisterShortcut(QHotkey::NativeShortcut shortcut) Q_DECL_OVERRIDE;
+    quint32 nativeKeycode(Qt::Key keycode, bool& ok) override;
+    quint32 nativeModifiers(Qt::KeyboardModifiers modifiers, bool& ok) override;
+    bool    registerShortcut(QHotkey::NativeShortcut shortcut) override;
+    bool    unregisterShortcut(QHotkey::NativeShortcut shortcut) override;
 
 private:
     static QString                 formatWinError(DWORD winError);
@@ -45,17 +45,17 @@ QHotkeyPrivateWin::QHotkeyPrivateWin()
 bool QHotkeyPrivate::isPlatformSupported() { return true; }
 
 bool QHotkeyPrivateWin::nativeEventFilter(const QByteArray& eventType, void *message,
-                                          _NATIVE_EVENT_RESULT *result)
+                                          QNATIVE_EVENT_RESULT *result)
 {
     Q_UNUSED(eventType)
     Q_UNUSED(result)
 
-    MSG *msg = static_cast<MSG *>(message);
-    if (msg->message == WM_HOTKEY) {
-        QHotkey::NativeShortcut shortcut = { HIWORD(msg->lParam), LOWORD(msg->lParam) };
-        this->activateShortcut(shortcut);
-        if (this->polledShortcuts.empty()) this->pollTimer.start();
-        this->polledShortcuts.append(shortcut);
+    if (const auto msg = static_cast<MSG *>(message); msg->message == WM_HOTKEY) {
+        const QHotkey::NativeShortcut shortcut{ HIWORD(msg->lParam), LOWORD(msg->lParam) };
+        activateShortcut(shortcut);
+
+        if (polledShortcuts.empty()) pollTimer.start();
+        polledShortcuts.append(shortcut);
     }
 
     return false;
@@ -63,22 +63,21 @@ bool QHotkeyPrivateWin::nativeEventFilter(const QByteArray& eventType, void *mes
 
 void QHotkeyPrivateWin::pollForHotkeyRelease()
 {
-    auto it = std::remove_if(this->polledShortcuts.begin(), this->polledShortcuts.end(),
-                             [this](const QHotkey::NativeShortcut& shortcut) {
-                                 bool pressed = (GetAsyncKeyState(shortcut.key) & (1 << 15)) != 0;
-                                 if (!pressed) this->releaseShortcut(shortcut);
-                                 return !pressed;
-                             });
-    this->polledShortcuts.erase(it, this->polledShortcuts.end());
-    if (this->polledShortcuts.empty()) this->pollTimer.stop();
+    const auto it = std::remove_if(
+        polledShortcuts.begin(), polledShortcuts.end(), [this](const QHotkey::NativeShortcut& shortcut) {
+            const bool pressed = (::GetAsyncKeyState(shortcut.key) & (1 << 15)) != 0;
+            if (!pressed) releaseShortcut(shortcut);
+            return !pressed;
+        });
+    polledShortcuts.erase(it, polledShortcuts.end());
+    if (polledShortcuts.empty()) pollTimer.stop();
 }
 
 quint32 QHotkeyPrivateWin::nativeKeycode(Qt::Key keycode, bool& ok)
 {
     ok = true;
     if (keycode <= 0xFFFF) { // Try to obtain the key from it's "character"
-        const SHORT vKey = VkKeyScanW(static_cast<WCHAR>(keycode));
-        if (vKey > -1) return LOBYTE(vKey);
+        if (const SHORT vKey = ::VkKeyScanW(static_cast<WCHAR>(keycode)); vKey > -1) return LOBYTE(vKey);
     }
 
     // find key from switch/case --> Only finds a very small subset of keys
@@ -164,13 +163,12 @@ quint32 QHotkeyPrivateWin::nativeKeycode(Qt::Key keycode, bool& ok)
     case Qt::Key_Massyo:        return VK_OEM_FJ_MASSHOU;
     case Qt::Key_Touroku:       return VK_OEM_FJ_TOUROKU;
 
-    default:
-        if (keycode <= 0xFFFF)
-            return static_cast<BYTE>(keycode);
-        else {
-            ok = false;
-            return 0;
-        }
+    default:                    {
+        if (keycode <= 0xFFFF) return static_cast<BYTE>(keycode);
+
+        ok = false;
+        return 0;
+    }
     }
 }
 
@@ -187,36 +185,31 @@ quint32 QHotkeyPrivateWin::nativeModifiers(Qt::KeyboardModifiers modifiers, bool
 
 bool QHotkeyPrivateWin::registerShortcut(QHotkey::NativeShortcut shortcut)
 {
-    BOOL ok = RegisterHotKey(NULL, HKEY_ID(shortcut), shortcut.modifier + MOD_NOREPEAT, shortcut.key);
-    if (ok)
+    if (::RegisterHotKey(nullptr, HKEY_ID(shortcut), shortcut.modifier + MOD_NOREPEAT, shortcut.key))
         return true;
-    else {
-        error = QHotkeyPrivateWin::formatWinError(::GetLastError());
-        return false;
-    }
+
+    error = formatWinError(::GetLastError());
+    return false;
 }
 
 bool QHotkeyPrivateWin::unregisterShortcut(QHotkey::NativeShortcut shortcut)
 {
-    BOOL ok = UnregisterHotKey(NULL, HKEY_ID(shortcut));
-    if (ok)
-        return true;
-    else {
-        error = QHotkeyPrivateWin::formatWinError(::GetLastError());
-        return false;
-    }
+    if (::UnregisterHotKey(nullptr, HKEY_ID(shortcut))) return true;
+
+    error = formatWinError(::GetLastError());
+    return false;
 }
 
 QString QHotkeyPrivateWin::formatWinError(DWORD winError)
 {
-    wchar_t *buffer = NULL;
-    DWORD num = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, winError,
-                               0, (LPWSTR)&buffer, 0, NULL);
+    wchar_t    *buffer = nullptr;
+    const DWORD num = ::FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, nullptr,
+                                       winError, 0, reinterpret_cast<LPWSTR>(&buffer), 0, nullptr);
     if (buffer) {
         QString res = QString::fromWCharArray(buffer, num);
         LocalFree(buffer);
         return res;
     }
-    else
-        return QString();
+
+    return {};
 }

@@ -20,7 +20,7 @@ void QHotkey::addGlobalMapping(const QKeySequence& shortcut, QHotkey::NativeShor
 
     QMetaObject::invokeMethod(
         QHotkeyPrivate::instance(), "addMappingInvoked", Qt::QueuedConnection,
-        Q_ARG(Qt::Key, Qt::Key(key & ~Qt::KeyboardModifierMask)),
+        Q_ARG(Qt::Key, static_cast<Qt::Key>(key & ~Qt::KeyboardModifierMask)),
         Q_ARG(Qt::KeyboardModifiers, Qt::KeyboardModifiers(key & Qt::KeyboardModifierMask)),
         Q_ARG(QHotkey::NativeShortcut, nativeShortcut));
 }
@@ -42,7 +42,7 @@ QHotkey::QHotkey(Qt::Key keyCode, Qt::KeyboardModifiers modifiers, bool autoRegi
     setShortcut(keyCode, modifiers, autoRegister);
 }
 
-QHotkey::QHotkey(QHotkey::NativeShortcut shortcut, bool autoRegister, QObject *parent) : QHotkey(parent)
+QHotkey::QHotkey(NativeShortcut shortcut, bool autoRegister, QObject *parent) : QHotkey(parent)
 {
     setNativeShortcut(shortcut, autoRegister);
 }
@@ -54,12 +54,12 @@ QHotkey::~QHotkey()
 
 QKeySequence QHotkey::shortcut() const
 {
-    if (_keyCode == Qt::Key_unknown) return QKeySequence();
+    if (_keyCode == Qt::Key_unknown) return {};
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     return QKeySequence((_keyCode | _modifiers).toCombined());
 #else
-    return QKeySequence(static_cast<int>(_keyCode | _modifiers));
+    return { static_cast<int>(_keyCode | _modifiers) };
 #endif
 }
 
@@ -85,7 +85,7 @@ bool QHotkey::setShortcut(const QKeySequence& shortcut, bool autoRegister)
     const int key = shortcut[0];
 #endif
 
-    return setShortcut(Qt::Key(key & ~Qt::KeyboardModifierMask),
+    return setShortcut(static_cast<Qt::Key>(key & ~Qt::KeyboardModifierMask),
                        Qt::KeyboardModifiers(key & Qt::KeyboardModifierMask), autoRegister);
 }
 
@@ -134,7 +134,7 @@ bool QHotkey::resetShortcut()
     return true;
 }
 
-bool QHotkey::setNativeShortcut(QHotkey::NativeShortcut nativeShortcut, bool autoRegister)
+bool QHotkey::setNativeShortcut(NativeShortcut nativeShortcut, bool autoRegister)
 {
     if (_registered) {
         if (autoRegister) {
@@ -185,13 +185,13 @@ QHotkeyPrivate::~QHotkeyPrivate()
 
 QHotkey::NativeShortcut QHotkeyPrivate::nativeShortcut(Qt::Key keycode, Qt::KeyboardModifiers modifiers)
 {
-    Qt::ConnectionType conType =
-        (QThread::currentThread() == thread() ? Qt::DirectConnection : Qt::BlockingQueuedConnection);
+    const Qt::ConnectionType conType =
+        QThread::currentThread() == thread() ? Qt::DirectConnection : Qt::BlockingQueuedConnection;
     QHotkey::NativeShortcut res;
     if (!QMetaObject::invokeMethod(this, "nativeShortcutInvoked", conType,
                                    Q_RETURN_ARG(QHotkey::NativeShortcut, res), Q_ARG(Qt::Key, keycode),
                                    Q_ARG(Qt::KeyboardModifiers, modifiers))) {
-        return QHotkey::NativeShortcut();
+        return {};
     }
     return res;
 }
@@ -200,8 +200,8 @@ bool QHotkeyPrivate::addShortcut(QHotkey *hotkey)
 {
     if (hotkey->_registered) return false;
 
-    Qt::ConnectionType conType =
-        (QThread::currentThread() == thread() ? Qt::DirectConnection : Qt::BlockingQueuedConnection);
+    const Qt::ConnectionType conType =
+        QThread::currentThread() == thread() ? Qt::DirectConnection : Qt::BlockingQueuedConnection;
     bool res = false;
     if (!QMetaObject::invokeMethod(this, "addShortcutInvoked", conType, Q_RETURN_ARG(bool, res),
                                    Q_ARG(QHotkey *, hotkey))) {
@@ -216,8 +216,8 @@ bool QHotkeyPrivate::removeShortcut(QHotkey *hotkey)
 {
     if (!hotkey->_registered) return false;
 
-    Qt::ConnectionType conType =
-        (QThread::currentThread() == thread() ? Qt::DirectConnection : Qt::BlockingQueuedConnection);
+    const Qt::ConnectionType conType =
+        QThread::currentThread() == thread() ? Qt::DirectConnection : Qt::BlockingQueuedConnection;
     bool res = false;
     if (!QMetaObject::invokeMethod(this, "removeShortcutInvoked", conType, Q_RETURN_ARG(bool, res),
                                    Q_ARG(QHotkey *, hotkey))) {
@@ -230,13 +230,13 @@ bool QHotkeyPrivate::removeShortcut(QHotkey *hotkey)
 
 void QHotkeyPrivate::activateShortcut(QHotkey::NativeShortcut shortcut)
 {
-    QMetaMethod signal = QMetaMethod::fromSignal(&QHotkey::activated);
+    const QMetaMethod signal = QMetaMethod::fromSignal(&QHotkey::activated);
     for (QHotkey *hkey : shortcuts.values(shortcut)) signal.invoke(hkey, Qt::QueuedConnection);
 }
 
 void QHotkeyPrivate::releaseShortcut(QHotkey::NativeShortcut shortcut)
 {
-    QMetaMethod signal = QMetaMethod::fromSignal(&QHotkey::released);
+    const QMetaMethod signal = QMetaMethod::fromSignal(&QHotkey::released);
     for (QHotkey *hkey : shortcuts.values(shortcut)) signal.invoke(hkey, Qt::QueuedConnection);
 }
 
@@ -248,7 +248,7 @@ void QHotkeyPrivate::addMappingInvoked(Qt::Key keycode, Qt::KeyboardModifiers mo
 
 bool QHotkeyPrivate::addShortcutInvoked(QHotkey *hotkey)
 {
-    QHotkey::NativeShortcut shortcut = hotkey->_nativeShortcut;
+    const auto shortcut = hotkey->_nativeShortcut;
 
     if (!shortcuts.contains(shortcut)) {
         if (!registerShortcut(shortcut)) {
@@ -265,7 +265,7 @@ bool QHotkeyPrivate::addShortcutInvoked(QHotkey *hotkey)
 
 bool QHotkeyPrivate::removeShortcutInvoked(QHotkey *hotkey)
 {
-    QHotkey::NativeShortcut shortcut = hotkey->_nativeShortcut;
+    const auto shortcut = hotkey->_nativeShortcut;
 
     if (shortcuts.remove(shortcut, hotkey) == 0) return false;
     hotkey->_registered = false;
@@ -302,14 +302,14 @@ QHotkey::NativeShortcut::NativeShortcut(quint32 key, quint32 modifier)
 
 bool QHotkey::NativeShortcut::isValid() const { return valid; }
 
-bool QHotkey::NativeShortcut::operator==(QHotkey::NativeShortcut other) const
+bool QHotkey::NativeShortcut::operator==(const NativeShortcut& other) const
 {
-    return (key == other.key) && (modifier == other.modifier) && valid == other.valid;
+    return (key == other.key) && (modifier == other.modifier) && (valid == other.valid);
 }
 
-bool QHotkey::NativeShortcut::operator!=(QHotkey::NativeShortcut other) const
+bool QHotkey::NativeShortcut::operator!=(const NativeShortcut& other) const
 {
-    return (key != other.key) || (modifier != other.modifier) || valid != other.valid;
+    return (key != other.key) || (modifier != other.modifier) || (valid != other.valid);
 }
 
 QHOTKEY_HASH_SEED qHash(QHotkey::NativeShortcut key) { return qHash(key.key) ^ qHash(key.modifier); }

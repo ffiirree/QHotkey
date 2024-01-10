@@ -6,12 +6,12 @@
 #include <QAbstractNativeEventFilter>
 #include <QGlobalStatic>
 #include <QMultiHash>
-#include <QMutex>
+#include <QPair>
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-#define _NATIVE_EVENT_RESULT qintptr
+#define QNATIVE_EVENT_RESULT qintptr
 #else
-#define _NATIVE_EVENT_RESULT long
+#define QNATIVE_EVENT_RESULT long
 #endif
 
 class QHOTKEY_EXPORT QHotkeyPrivate : public QObject, public QAbstractNativeEventFilter
@@ -20,7 +20,8 @@ class QHOTKEY_EXPORT QHotkeyPrivate : public QObject, public QAbstractNativeEven
 
 public:
     QHotkeyPrivate(); // singleton!!!
-    ~QHotkeyPrivate();
+
+    ~QHotkeyPrivate() override;
 
     static QHotkeyPrivate *instance();
     static bool            isPlatformSupported();

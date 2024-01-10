@@ -4,7 +4,6 @@
 #include <QKeySequence>
 #include <QLoggingCategory>
 #include <QObject>
-#include <QPair>
 
 #ifdef QHOTKEY_SHARED
 #ifdef QHOTKEY_LIBRARY
@@ -23,7 +22,7 @@
 #endif
 
 //! A class to define global, systemwide Hotkeys
-class QHOTKEY_EXPORT QHotkey : public QObject
+class QHOTKEY_EXPORT QHotkey final : public QObject
 {
     Q_OBJECT
     //! @private
@@ -50,12 +49,12 @@ public:
         NativeShortcut(quint32 key, quint32 modifier = 0);
 
         //! Checks, whether this shortcut is valid or not
-        bool isValid() const;
+        [[nodiscard]] bool isValid() const;
 
         //! Equality operator
-        bool operator==(NativeShortcut other) const;
+        bool operator==(const NativeShortcut& other) const;
         //! Inequality operator
-        bool operator!=(NativeShortcut other) const;
+        bool operator!=(const NativeShortcut& other) const;
 
     private:
         bool valid;
@@ -79,16 +78,16 @@ public:
     ~QHotkey() override;
 
     //! @readAcFn{QHotkey::registered}
-    bool                  isRegistered() const;
+    [[nodiscard]] bool                  isRegistered() const;
     //! @readAcFn{QHotkey::shortcut}
-    QKeySequence          shortcut() const;
+    [[nodiscard]] QKeySequence          shortcut() const;
     //! @readAcFn{QHotkey::shortcut} - the key only
-    Qt::Key               keyCode() const;
+    [[nodiscard]] Qt::Key               keyCode() const;
     //! @readAcFn{QHotkey::shortcut} - the modifiers only
-    Qt::KeyboardModifiers modifiers() const;
+    [[nodiscard]] Qt::KeyboardModifiers modifiers() const;
 
     //! Get the current native shortcut
-    NativeShortcut currentNativeShortcut() const;
+    [[nodiscard]] NativeShortcut currentNativeShortcut() const;
 
 public slots:
     //! @writeAcFn{QHotkey::registered}
@@ -102,7 +101,7 @@ public slots:
     bool resetShortcut();
 
     //! Set this hotkey to a native shortcut
-    bool setNativeShortcut(QHotkey::NativeShortcut nativeShortcut, bool autoRegister = false);
+    bool setNativeShortcut(NativeShortcut nativeShortcut, bool autoRegister = false);
 
 signals:
     //! Will be emitted if the shortcut is pressed

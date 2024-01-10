@@ -67,6 +67,12 @@ else()
     endif()
 endif()
 
+target_compile_options(qhotkey
+    PRIVATE
+        $<$<CXX_COMPILER_ID:MSVC>:/W4 /utf-8 /DUNICODE /D_UNICODE /DNOMINMAX /Zc:preprocessor /Zc:__cplusplus>
+        $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic>
+)
+
 if(BUILD_SHARED_LIBS)
     target_compile_definitions(qhotkey PUBLIC QHOTKEY_SHARED PRIVATE QHOTKEY_LIBRARY)
 endif()
@@ -130,16 +136,9 @@ install(
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-install(FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/QHotkey/qhotkey.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/QHotkey/QHotkey
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
-
-install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/QHotkeyConfigVersion.cmake
-    DESTINATION ${INSTALL_CONFIGDIR}
-)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/QHotkey/qhotkey.h             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/QHotkey/QHotkey               DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/QHotkeyConfigVersion.cmake    DESTINATION ${INSTALL_CONFIGDIR})
 
 install(EXPORT QHotkeyConfig DESTINATION ${INSTALL_CONFIGDIR})
 

@@ -13,25 +13,20 @@
 #include <X11/Xlib.h>
 #include <xcb/xcb.h>
 
-// compatibility to pre Qt 5.8
-#ifndef Q_FALLTHROUGH
-#define Q_FALLTHROUGH() (void)0
-#endif
-
 class QHotkeyPrivateX11 : public QHotkeyPrivate
 {
 public:
     // QAbstractNativeEventFilter interface
     bool nativeEventFilter(const QByteArray& eventType, void *message,
-                           _NATIVE_EVENT_RESULT *result) override;
+                           QNATIVE_EVENT_RESULT *result) override;
 
 protected:
     // QHotkeyPrivate interface
-    quint32        nativeKeycode(Qt::Key keycode, bool& ok) Q_DECL_OVERRIDE;
-    quint32        nativeModifiers(Qt::KeyboardModifiers modifiers, bool& ok) Q_DECL_OVERRIDE;
+    quint32        nativeKeycode(Qt::Key keycode, bool& ok) override;
+    quint32        nativeModifiers(Qt::KeyboardModifiers modifiers, bool& ok) override;
     static QString getX11String(Qt::Key keycode);
-    bool           registerShortcut(QHotkey::NativeShortcut shortcut) Q_DECL_OVERRIDE;
-    bool           unregisterShortcut(QHotkey::NativeShortcut shortcut) Q_DECL_OVERRIDE;
+    bool           registerShortcut(QHotkey::NativeShortcut shortcut) override;
+    bool           unregisterShortcut(QHotkey::NativeShortcut shortcut) override;
 
 private:
     static const QVector<quint32> specialModifiers;
@@ -72,7 +67,7 @@ const QVector<quint32> QHotkeyPrivateX11::specialModifiers = { 0, Mod2Mask, Lock
 const quint32          QHotkeyPrivateX11::validModsMask    = ShiftMask | ControlMask | Mod1Mask | Mod4Mask;
 
 bool QHotkeyPrivateX11::nativeEventFilter(const QByteArray& eventType, void *message,
-                                          _NATIVE_EVENT_RESULT *result)
+                                          QNATIVE_EVENT_RESULT *result)
 {
     Q_UNUSED(eventType)
     Q_UNUSED(result)
@@ -80,24 +75,22 @@ bool QHotkeyPrivateX11::nativeEventFilter(const QByteArray& eventType, void *mes
     auto *genericEvent = static_cast<xcb_generic_event_t *>(message);
     if (genericEvent->response_type == XCB_KEY_PRESS) {
         xcb_key_press_event_t keyEvent = *static_cast<xcb_key_press_event_t *>(message);
-        this->prevEvent                = keyEvent;
-        if (this->prevHandledEvent.response_type == XCB_KEY_RELEASE) {
-            if (this->prevHandledEvent.time == keyEvent.time) return false;
+        prevEvent                      = keyEvent;
+        if (prevHandledEvent.response_type == XCB_KEY_RELEASE) {
+            if (prevHandledEvent.time == keyEvent.time) return false;
         }
-        this->activateShortcut({ keyEvent.detail, keyEvent.state & QHotkeyPrivateX11::validModsMask });
+        activateShortcut({ keyEvent.detail, keyEvent.state & QHotkeyPrivateX11::validModsMask });
     }
     else if (genericEvent->response_type == XCB_KEY_RELEASE) {
         xcb_key_release_event_t keyEvent = *static_cast<xcb_key_release_event_t *>(message);
-        this->prevEvent                  = keyEvent;
+        prevEvent                        = keyEvent;
         QTimer::singleShot(50, [this, keyEvent] {
-            if (this->prevEvent.time == keyEvent.time &&
-                this->prevEvent.response_type == keyEvent.response_type &&
-                this->prevEvent.detail == keyEvent.detail) {
-                this->releaseShortcut(
-                    { keyEvent.detail, keyEvent.state & QHotkeyPrivateX11::validModsMask });
+            if (prevEvent.time == keyEvent.time && prevEvent.response_type == keyEvent.response_type &&
+                prevEvent.detail == keyEvent.detail) {
+                releaseShortcut({ keyEvent.detail, keyEvent.state & QHotkeyPrivateX11::validModsMask });
             }
         });
-        this->prevHandledEvent = keyEvent;
+        prevHandledEvent = keyEvent;
     }
 
     return false;
@@ -182,7 +175,7 @@ bool QHotkeyPrivateX11::registerShortcut(QHotkey::NativeShortcut shortcut)
 
     if (errorHandler.hasError) {
         error = errorHandler.errorString;
-        this->unregisterShortcut(shortcut);
+        unregisterShortcut(shortcut);
         return false;
     }
     return true;
